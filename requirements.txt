@@ -1,0 +1,14 @@
+nltk
+git+https://github.com/CloudBotIRC/mcstatus.git@master
+microdata
+psycopg2
+sqlalchemy
+watchdog
+lxml
+beautifulsoup4
+feedparser
+requests
+psutil
+requests-oauthlib
+pythonwhois
+isodate
