@@ -54,6 +54,7 @@ game_status structure
             'monster2':'integer',
             'monster3':'integer',
             'max_level':'integer',
+            'max_level_2':'integer',
             'next_monster_time':'integer',
             'next_monster_idle_time': 'integer',
             'game_on':0|1,
@@ -94,14 +95,30 @@ monsters = ['Green Slime', 'Bat', 'Spider', 'Bee Swarm', 'Bear',\
         'Earth Spirit', 'Giant Bat', 'Skeleton', 'Wolf', 'Golem',\
         'Red Slime', 'Ghost', 'Gray Goblin', 'Giant Rat', 'Not Slime',\
         'Ice Bat', 'Frost Spider', 'Ice Slime', 'Polar Bear', 'Snow Spirit',\
-        'Frozen Golem', 'White Goblin', 'Frost Ghoul', 'White Wolf', 'Yeti']
+        'Frozen Golem', 'White Goblin', 'Frost Ghoul', 'White Wolf', 'Yeti',\
+        'Fire Bat', 'Fire Spider', 'Lava Slime', 'Flaming Bear', 'Hell Spirit'\
+        'Magma Golem', 'Red Goblin', 'Flame Ghoul', 'Brown Wolf', 'Demon',\
+        'Giant Bat', 'Spider Queen', 'King Slime', 'Bigfoot', 'Blue Wisp',\
+        'Ancient Golem', 'Goblin Captain', 'Ruined Ghoul', 'Living Statue', 'Guardian',\
+        'Fish', 'Big Fish', 'Pirate', 'Eel', 'Octopus',\
+        'Bigger Fish', 'Shark', 'Ghost Pirate', 'Kraken', 'Hydra',\
+        'Robot v2', 'Spider Bot', 'Bird Bot', 'Yellow Slime', 'Toxic Slime',\
+        'Robot v3', 'Bomber Bot', 'Nuclear Reactor Bot', 'Plasma Bot', 'Rapture-001']
 monsters_short = ['Grn Slm', 'Bat', 'Spider', 'Bees', 'Bear',\
         'LiveTree', 'Goblin', 'Blu Slm', 'Robot', 'NS Trope',\
         'LandSprt', 'Big Bat', 'Skeleton', 'Wolf', 'Golem',\
         'Red Slm', 'Ghost', 'GrayGbln', 'Big Rat', 'Not Slm',\
         'Ice Bat', 'FrstSpdr', 'Ice Slm', 'Plr Bear', 'SnowSprt',\
-        'Frzn Glm', 'Wht Gbln', 'SnwGhoul', 'Wht Wolf', 'Yeti']
-faces = ['(☼Д☼)', 'Ψ(☆ｗ☆)Ψ']
+        'Frzn Glm', 'Wht Gbln', 'SnwGhoul', 'Wht Wolf', 'Yeti',\
+        'Fire Bat', 'FireSpdr', 'Lava Slm', 'FlamBear', 'FlamSprt',\
+        'MagmaGlm', 'Red Gbln', 'FlmGhoul', 'BrwnWolf', 'Demon',
+        'Gnt Bat', 'SpdrQuen', 'Kng Slm', 'Bigfoot', 'BluWisp',\
+        'AncntGlm', 'GblnCptn', 'RuinGhl', 'Statue', 'Guardian',\
+        'Fish', 'BigFish', 'Pirate', 'Eel', 'Octopus',\
+        'BigrFish', 'Shark', 'GhstPrt', 'Kraken', 'Hydra',\
+        'Robot v2', 'Spdr Bot', 'Bird Bot', 'Yllw Slm', 'Txc Slm',\
+        'Robot v3', 'BmbrBot', 'Nuke Bot', 'PlsmaBot', 'Rapture-1']
+faces = ['(☼Д☼)', 'Ψ(☆ｗ☆)Ψ', '٩(- ̮̮̃-̃)۶']
 
 monster_info = [\
         '', \
@@ -158,6 +175,8 @@ def incrementMsgCounter(event, conn, chan, nick, db):
         level = get_player_level(db, conn.name, chan, nick)
         if level and level > game_status[conn.name][chan]['max_level']:
             game_status[conn.name][chan]['max_level'] = level
+        if level and level < game_status[conn.name][chan]['max_level'] and level > game_status[conn.name][chan]['max_level_2']:
+            game_status[conn.name][chan]['max_level_2'] = level
         if event.host not in game_status[conn.name][chan]['masks']:
             game_status[conn.name][chan]['masks'].append(event.host)
 
@@ -217,6 +236,7 @@ def set_monster_time(chan, conn):
     game_status[conn.name][chan]['next_monster_idle_time'] = int(time()) + random.randint(MIN_IDLE_TIME, MAX_IDLE_TIME)
     #game_status[conn.name][chan]['flyaway'] = game_status[conn.name][chan]['next_monster_time'] + 600
     game_status[conn.name][chan]['max_level'] = 1
+    game_status[conn.name][chan]['max_level_2'] = 1
     game_status[conn.name][chan]['monster_status'] = STATUS_WAITING
     # let's also reset the number of messages said and the list of masks that have spoken.
     game_status[conn.name][chan]['messages'] = 0
@@ -242,10 +262,21 @@ def generate_monsters(conn, chan):
     global game_status
     monster1 = 0
     max_level = game_status[conn.name][chan]['max_level'] + 1
-    monster3 = get_monster_index(random.randint(1, max_level))
+    max_level_2 = game_status[conn.name][chan]['max_level_2'] + 1
+    temp = max_level // 2
+    if temp < 1:
+        temp = 1
+    monster3 = get_monster_index(random.randint(temp, max_level))
     if monster3 >= len(monsters):
         monster3 = len(monsters) - 1
-    monster2 = (monster1 + monster3) // 2
+    temp = max_level_2 // 2
+    if temp < 1:
+        temp = 1
+    monster2 = get_monster_index(random.randint(temp, max_level_2))
+    max_monster2 = get_monster_index(max_level_2)
+    temp = (monster1 + monster3) // 2
+    if max_monster2 > temp:
+        monster2 = temp
     game_status[conn.name][chan]['monster1'] = monster1
     game_status[conn.name][chan]['monster2'] = monster2
     game_status[conn.name][chan]['monster3'] = monster3
@@ -327,6 +358,12 @@ def hit_or_miss(db, network, chan, name, deploy, attack, monster_level, level):
         out = 0.9
     if monster_level > 20:
         monster_level += 1
+    if monster_level > 60:
+        monster_level += 1
+    if monster_level > 80:
+        monster_level += 3
+    if monster_level > 100:
+        monster_level += 5
     captures = get_player_captures(db, network, chan, name, get_monster_index(monster_level))
     if captures > 0:
         level += captures
@@ -663,6 +700,30 @@ def smart_truncate(content, length=320, suffix='...'):
     else:
         return content[:length].rsplit(' • ', 1)[0]+suffix
 
+
+@hook.command("globalleaderboard", "globalleader", "globalleaders", "globallead", "globalleads", autohelp=False)
+def global_leaderboard(text, chan, conn, db):
+    if freeze > 0:
+        return
+    if chan in opt_out:
+        return
+    players = defaultdict(tuple)
+    out = "Global Leaderboard: "
+    scores = db.execute(select([table.c.name, table.c.level, table.c.exp, table.c.chan]) \
+        .where(table.c.network == conn.name) \
+        .order_by(desc(table.c.level), desc(table.c.exp)))
+    if scores:
+        for row in scores:
+            if row[1] == 1 and row[2] == 0:
+                continue
+            players[(row[0], row[3])] = (row[1], row[2])
+    if len(players) == 0:
+        return "It appears no one has slayed any monster yet."
+
+    topkillers = sorted(players.items(), key=operator.itemgetter(1), reverse = True)
+    out += ' • '.join(["{}: LVL {} ({} EXP)".format('\x02' + k[0][:1] + u'\u200b' + k[0][1:] + '\x02', str(v[0]), str(v[1]))  for k, v in topkillers])
+    out = smart_truncate(out)
+    return out
 
 @hook.command("leaderboard", "leader", "leaders", "lead", "leads", autohelp=False)
 def leaderboard(text, chan, conn, db):
@@ -1068,8 +1129,14 @@ def give_monster(text, nick, chan, conn, db):
 def get_max_exp(level):
     if level <= 20:
         return level * 5
-    else:
+    elif level <= 60:
         return 100 + (level - 20) * 6
+    elif level <= 80:
+        return 340 + (level - 60) * 7
+    elif level <= 100:
+        return 480 + (level - 80) * 8
+    else:
+        return 640 + (level - 100) * 10
 
 def get_max_hp(level):
     return level * 5
@@ -1077,8 +1144,14 @@ def get_max_hp(level):
 def get_monster_atk(level):
     if level <= 20:
         return level
-    else:
+    elif level <= 60:
         return int(20 + (level - 20) * 1.25)
+    elif level <= 80:
+        return int(70 + (level - 60) * 1.5)
+    elif level <= 100:
+        return int(100 + (level - 80) * 2)
+    else:
+        return int(140 + (level - 100) * 2.5)
 
 def get_monster_heal(level):
     heal = get_monster_index(level) + 1
